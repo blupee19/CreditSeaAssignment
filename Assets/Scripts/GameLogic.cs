@@ -6,6 +6,7 @@ using UnityEngine.UI;
 
 public class GameLogic : MonoBehaviour
 {
+    // Singleton to allow other scripts to easily access this instance
     public static GameLogic Instance { get; private set; }
 
     [Header("Player Tokens")]
@@ -28,8 +29,16 @@ public class GameLogic : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); } else { Instance = this; }
     }
 
-    private void OnEnable() { Dice.OnDiceRolled += HandleDiceRoll; }
-    private void OnDisable() { Dice.OnDiceRolled -= HandleDiceRoll; }
+    private void OnEnable()
+    {
+        // Subscribe to the dice roll event
+        Dice.OnDiceRolled += HandleDiceRoll;
+    }
+    private void OnDisable()
+    {
+        // Unsubscribe to prevent errors
+        Dice.OnDiceRolled -= HandleDiceRoll;
+    }
 
     private void Start()
     {
@@ -48,10 +57,10 @@ public class GameLogic : MonoBehaviour
     {
         if (CheckForWin()) return;
 
+        // If a 6 was rolled (and not used to unlock a token), grant another turn
         if (grantAnotherTurn)
         {
-            grantAnotherTurn = false;
-            Debug.Log("Rolled a 6! Player gets another turn.");
+            grantAnotherTurn = false; // Use up the extra turn
             StartTurn();
         }
         else
@@ -65,10 +74,10 @@ public class GameLogic : MonoBehaviour
     {
         currentDiceRoll = diceResult;
         grantAnotherTurn = (currentDiceRoll == 6);
-        Debug.Log($"Rolled a {currentDiceRoll}");
 
         PlayerToken[] activePlayerTokens = isBlueTurn ? blueTokens : greenTokens;
 
+        // Special case: If a 6 is rolled and all tokens are in base, auto-move the first one
         if (currentDiceRoll == 6 && activePlayerTokens.All(t => t.CurrentState == PlayerToken.TokenState.InBase))
         {
             MoveToken(activePlayerTokens[0]);
@@ -79,16 +88,18 @@ public class GameLogic : MonoBehaviour
 
         if (choosableTokens.Count == 0)
         {
-            Debug.Log("No movable tokens. Switching turn.");
+            // No possible moves, end the turn
             grantAnotherTurn = false;
             Invoke(nameof(EndTurn), 1f);
         }
         else if (choosableTokens.Count == 1)
         {
+            // Only one move is possible, so make it automatically
             MoveToken(choosableTokens[0]);
         }
         else
         {
+            // Let the player choose which token to move
             turnIndicatorText.text = "Choose a token to move";
             foreach (var token in choosableTokens)
             {
@@ -100,7 +111,10 @@ public class GameLogic : MonoBehaviour
     public void PlayerSelectedToken(PlayerToken token)
     {
         if (!choosableTokens.Contains(token)) { return; }
+
+        // Hide selection buttons once a choice is made
         foreach (var t in choosableTokens) { t.SetSelectable(false); }
+
         MoveToken(token);
     }
 
@@ -108,6 +122,7 @@ public class GameLogic : MonoBehaviour
     {
         if (token.CurrentState == PlayerToken.TokenState.InBase && currentDiceRoll == 6)
         {
+            // Using a 6 to get out of base forfeits the extra turn
             grantAnotherTurn = false;
             token.EnterBoard();
         }
@@ -117,6 +132,7 @@ public class GameLogic : MonoBehaviour
         }
     }
 
+    // Called by a token after it finishes its move coroutine
     public void OnTokenMoveComplete(PlayerToken movedToken)
     {
         CheckForCapture(movedToken);
@@ -136,10 +152,11 @@ public class GameLogic : MonoBehaviour
             if (opponentToken.CurrentState == PlayerToken.TokenState.OnBoard)
             {
                 Transform opponentWaypoint = opponentToken.waypoints[opponentToken.WaypointIndex];
+                // Compare waypoint positions to see if they landed on the same spot
                 if (Vector3.Distance(targetWaypoint.position, opponentWaypoint.position) < 0.1f)
                 {
                     opponentToken.ReturnToBase();
-                    break;
+                    break; // Only one capture per turn
                 }
             }
         }
@@ -158,28 +175,24 @@ public class GameLogic : MonoBehaviour
         winScreen.gameObject.SetActive(true);
         winnerText.gameObject.SetActive(true);
         dice.SetInteractable(false);
-
-
-
-
     }
+
+    // Determines which of the current player's tokens are legally allowed to move
     private List<PlayerToken> GetMovableTokens(PlayerToken[] tokens)
     {
         var movableTokens = new List<PlayerToken>();
         foreach (var token in tokens)
         {
-            // Case 1: Token is in the base and player rolled a 6
+            // Rule 1: Can move from base if a 6 is rolled
             if (token.CurrentState == PlayerToken.TokenState.InBase && currentDiceRoll == 6)
             {
                 movableTokens.Add(token);
             }
-            // Case 2: Token is already on the board
+            // Rule 2: Can move if on the board
             else if (token.CurrentState == PlayerToken.TokenState.OnBoard)
             {
-                // Calculate how many steps are needed to reach the final waypoint
+                // But only if the move doesn't overshoot the final 'home' square
                 int stepsToHome = token.waypoints.Length - 1 - token.WaypointIndex;
-
-                // Only consider this token movable if the dice roll is less than or equal to the steps needed
                 if (currentDiceRoll <= stepsToHome)
                 {
                     movableTokens.Add(token);
@@ -191,6 +204,7 @@ public class GameLogic : MonoBehaviour
 
     public void MainMenuButton()
     {
+        // Load scene with build index 0 (usually the main menu)
         SceneManager.LoadScene(0);
     }
 }
