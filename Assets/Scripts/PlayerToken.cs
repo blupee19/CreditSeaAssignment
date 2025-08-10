@@ -4,11 +4,11 @@ using UnityEngine.UI;
 
 public class PlayerToken : MonoBehaviour
 {
-    // === ENUMS ===
+    // ENUMS
     public enum PlayerColor { Blue, Green }
     public enum TokenState { InBase, OnBoard, Home }
 
-    // === PUBLIC FIELDS (Inspector) ===
+    // PUBLIC FIELDS
     [Tooltip("The color of this player's token")]
     public PlayerColor playerColor;
     [Tooltip("The path this token follows")]
@@ -19,15 +19,14 @@ public class PlayerToken : MonoBehaviour
     [SerializeField] private Button selectionButton;
 
 
-    // === PROPERTIES ===
+    // PROPERTIES 
     public TokenState CurrentState { get; private set; } = TokenState.InBase;
     public int WaypointIndex { get; private set; } = -1; // -1 means it's in the base
 
-    // === PRIVATE FIELDS ===
+    // PRIVATE FIELDS 
     private bool isMoving = false;
     private const float MOVE_SPEED = 10f;
 
-    // === UNITY METHODS ===
     private void Start()
     {
         if (selectionButton != null)
@@ -41,7 +40,6 @@ public class PlayerToken : MonoBehaviour
         }
     }
 
-    // === PUBLIC METHODS ===
     public void OnSelectionButtonClick()
     {
         GameLogic.Instance.PlayerSelectedToken(this);
