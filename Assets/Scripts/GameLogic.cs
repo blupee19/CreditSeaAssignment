@@ -204,7 +204,7 @@ public class GameLogic : MonoBehaviour
 
     public void MainMenuButton()
     {
-        // Load scene with build index 0 (usually the main menu)
+        // Load scene with build index 0
         SceneManager.LoadScene(0);
     }
 }
