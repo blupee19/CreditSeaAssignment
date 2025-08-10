@@ -1,4 +1,4 @@
-# CreditSeaAssignment
+# Simplified Ludo Assignment
 Ludo Game - Unity Developer Assignment
 
 This project is a 2-player Ludo game created in Unity as part of a technical assessment. It was built to fulfill all the core requirements outlined in the assignment, focusing on clean code and a complete gameplay loop.
